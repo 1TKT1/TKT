@@ -10,13 +10,7 @@ SPECTRUMS_PATH = f"{BASE_PATH}/outputs/spectrums"
 
 
 def _load_pt_files(folder_path, load_all, snr_values_ref):
-    """
-    内部辅助函数：加载指定文件夹下的 .pt 文件
-    :param folder_path: 目标文件夹路径
-    :param load_all: 是否加载全部历史文件 (False 则只加载最新)
-    :param snr_values_ref: 用于保存/更新全局 SNR 数组的列表引用
-    :return: 解析后的字典 {tag: data} 或 单一数据
-    """
+
     pt_files = glob.glob(os.path.join(folder_path, "*.pt"))
     if not pt_files:
         return None

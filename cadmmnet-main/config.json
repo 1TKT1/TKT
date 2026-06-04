@@ -1,0 +1,25 @@
+{
+  "train-model": {
+    "model": "CADMM-Net",
+    "num_layers": 15,
+    "dataset_train_path": "./datasets/Train_Dataset_OFDM_CFR_2D_with_Dict.mat",
+    "epochs": 150,
+    "lr": 0.001,
+    "batch_size": 32,
+    "num_training_samples": 1800,
+    "model_path": null,
+    "load_latest_state": false,
+    "device": "cuda"
+  },
+  "evaluate-model": {
+    "model": "CADMM-Net",
+    "num_layers": 15,
+    "dataset_test_path": "./datasets/Test_Dataset_OFDM_CFR_2D.mat",
+    "model_path": null,
+    "load_latest_state": true,
+    "metric": "rmse",
+    "bin_threshold": 2,
+    "amp_threshold": 0.4,
+    "device": "cuda"
+  }
+}

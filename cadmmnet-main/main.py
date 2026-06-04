@@ -1,67 +1,52 @@
 import argparse
 import json
+import sys  # 🚀 修复点 1：引入 Python 标准系统模块
 import torch
-
-# 🌟 修复：只导入我们需要的 generate_dictionary，去掉了被废弃的函数
-from datasets.dataset_generator import generate_dictionary
 from utils.training_utils import train_model
-from utils.utils import set_random_seeds
 from utils.metric_utils import evaluate_model
+from utils.utils import set_random_seeds
 
 SEED = 1234
 
+
 def main():
-    """
-    主脚本：管理二维数据集生成、模型训练和测试。
-    注意：当前架构下，大规模训练数据已由 MATLAB 生成 (.mat)，
-    Python 端主要负责生成字典 (.pt) 以及执行训练和评估。
-    """
-    parser = argparse.ArgumentParser(
-        description="Main script to manage 2D dataset generation, training, and testing of models.")
+    parser = argparse.ArgumentParser(description="2D CADMM-Net Trainer & Evaluator")
     parser.add_argument('--config', type=str, help='Path to JSON config file.')
-    subparsers = parser.add_subparsers(dest='command', help="Choose between dataset generation, training, and testing.")
+    subparsers = parser.add_subparsers(dest='command')
 
-    # --- 命令 1: 仅生成字典 (适配 MATLAB 数据的关键步骤) ---
-    parser_array = subparsers.add_parser("create-array", help="Generate dictionary only.")
-    parser_array.add_argument('--array_type', type=str, default='4T4R')
-    parser_array.add_argument('--num_elements', type=int, default=4)     # 4 天线
-    parser_array.add_argument('--num_subcarriers', type=int, default=432) # 432 子载波
-    parser_array.add_argument('--N_theta', type=int, default=128)
-    parser_array.add_argument('--N_tau', type=int, default=128)
-
-    # --- 命令 2: 训练模型 ---
+    # ==========================================
+    # 1. 注册 train-model 命令
+    # ==========================================
     parser_train = subparsers.add_parser("train-model", help="Train CADMM-Net.")
     parser_train.add_argument('--model', type=str, default='CADMM-Net')
     parser_train.add_argument('--num_layers', type=int, default=15)
-    parser_train.add_argument('--dataset_train_path', type=str, required=True, help="Path to the MATLAB .mat dataset")
-    parser_train.add_argument('--dict_path', type=str, required=True, help="Path to the Python generated .pt dictionary")
-    parser_train.add_argument('--epochs', type=int, default=100)
+    parser_train.add_argument('--dataset_train_path', type=str)
+    parser_train.add_argument('--epochs', type=int, default=60)
     parser_train.add_argument('--lr', type=float, default=1e-4)
     parser_train.add_argument('--batch_size', type=int, default=32)
-    parser_train.add_argument('--num_training_samples', type=int, default=None)
-    parser_train.add_argument('--model_path', type=str, default=None)
-    parser_train.add_argument('--load_latest_state', action='store_true')
+    parser_train.add_argument('--num_training_samples', type=int, default=1800)
     parser_train.add_argument('--device', type=str, default='cuda')
-    parser_train.add_argument('--alpha_cfo', type=float, default=0.0, help="Weight for CFO loss. Default 0 for clean data.")
 
-    # --- 命令 3: 评估模型 ---
-    parser_metrics = subparsers.add_parser("evaluate-model", help="Evaluate performance.")
-    parser_metrics.add_argument('--model', type=str, default='CADMM-Net')
-    parser_metrics.add_argument('--num_layers', type=int, default=15)
-    parser_metrics.add_argument('--dataset_test_path', type=str, required=True)
-    parser_metrics.add_argument('--dict_path', type=str, default=None, help="Path to dictionary if needed by evaluator")
-    parser_metrics.add_argument('--model_path', type=str, default=None)
-    parser_metrics.add_argument('--load_latest_state', type=bool, default=True, help="Automatically loads the latest saved state.")
-    parser_metrics.add_argument('--metric', type=str, default='detection_rate')
-    parser_metrics.add_argument('--bin_threshold', type=int, default=2)
-    parser_metrics.add_argument('--amp_threshold', type=float, default=0.4)
-    parser_metrics.add_argument('--return_degs', type=bool, default=True)
-    parser_metrics.add_argument('--device', type=str, default='cuda')
+    # ==========================================
+    # 2. 注册 evaluate-model 命令
+    # ==========================================
+    parser_eval = subparsers.add_parser("evaluate-model", help="Evaluate CADMM-Net RMSE.")
+    parser_eval.add_argument('--model', type=str, default='CADMM-Net')
+    parser_eval.add_argument('--num_layers', type=int, default=15)
+    parser_eval.add_argument('--dataset_test_path', type=str)
+    parser_eval.add_argument('--model_path', type=str, default=None)
+    parser_eval.add_argument('--load_latest_state', type=bool, default=True)
+    parser_eval.add_argument('--metric', type=str, default='rmse')
+    parser_eval.add_argument('--bin_threshold', type=int, default=2)
+    parser_eval.add_argument('--amp_threshold', type=float, default=0.4)
+    parser_eval.add_argument('--device', type=str, default='cuda')
 
+    # 显式捕获原始命令行输入，用于后续最高优先级覆盖
+    raw_args = parser.parse_known_args()[0]
     args = parser.parse_args()
     set_random_seeds(SEED)
 
-    # 处理 JSON 配置文件
+    # 从 config.json 读取基础参数
     if args.config:
         with open(args.config, 'r') as f:
             config = json.load(f)
@@ -69,35 +54,38 @@ def main():
             for key, value in command_args.items():
                 setattr(args, key, value)
 
-    # 逻辑分发
-    if args.command == 'create-array':
-        generate_dictionary(
-            array_type=args.array_type,
-            num_elements=args.num_elements,
-            num_subcarriers=args.num_subcarriers,
-            N_theta=args.N_theta,
-            N_tau=args.N_tau
-        )
+        # 🌟 修复点 2：将 argparse.sys.argv 修正为标准的 sys.argv
+        # 让显式敲入的命令行参数拥有最高继承权，反向覆盖 JSON 的死规定
+        for action in parser_eval._actions if args.command == 'evaluate-model' else parser_train._actions:
+            arg_name = action.dest
+            if hasattr(raw_args, arg_name) and getattr(raw_args, arg_name) is not None:
+                # 排除 subparser 默认产生的默认值干扰
+                if arg_name != 'command' and f'--{arg_name}' in ''.join(sys.argv):
+                    setattr(args, arg_name, getattr(raw_args, arg_name))
 
-    elif args.command == 'train-model':
+    # ==========================================
+    # 3. 根据命令执行对应的函数
+    # ==========================================
+    if args.command == 'train-model':
+        model_name_to_use = getattr(args, 'model_name', args.model)
         train_model(
-            model_name=args.model,
+            model=model_name_to_use,
             dataset_train_path=args.dataset_train_path,
-            dict_path=args.dict_path,
             num_layers=args.num_layers,
             epochs=args.epochs,
             lr=args.lr,
             batch_size=args.batch_size,
             num_training_samples=args.num_training_samples,
-            model_path=args.model_path,
-            load_latest_state=args.load_latest_state,
-            device=args.device,
-            alpha_cfo=args.alpha_cfo
+            device=args.device
         )
 
     elif args.command == 'evaluate-model':
+        if args.model_path is not None:
+            args.load_latest_state = False
+
+        model_name_to_use = getattr(args, 'model_name', args.model)
         evaluate_model(
-            model=args.model,
+            model=model_name_to_use,
             dataset_test_path=args.dataset_test_path,
             num_layers=args.num_layers,
             model_path=args.model_path,
@@ -105,9 +93,9 @@ def main():
             metric=args.metric,
             bin_threshold=args.bin_threshold,
             amp_threshold=args.amp_threshold,
-            return_degs=args.return_degs,
             device=args.device
         )
+
 
 if __name__ == '__main__':
     main()
