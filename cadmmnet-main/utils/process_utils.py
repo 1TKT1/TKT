@@ -76,7 +76,7 @@ def load_output(output_type, load_all=False):
     snr_values_ref = []  # 使用列表引用来跨函数保存 SNR
 
     if not os.path.exists(base_dir):
-        print(f"⚠️ Warning: Path {base_dir} does not exist.")
+        print(f" Warning: Path {base_dir} does not exist.")
         return results
 
     # 1. 遍历 Array Type (例如: '2d_ula', '4t4r')
@@ -129,7 +129,7 @@ def load_output(output_type, load_all=False):
                                 results[array_type][metric][model_name][num_layers] = data
 
         else:
-            # 针对 'losses' 和 'spectrums'
+
             for model_name in os.listdir(array_path):
                 model_path = os.path.join(array_path, model_name)
                 if not os.path.isdir(model_path):

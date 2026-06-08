@@ -85,7 +85,7 @@ class CAdmmNet(nn.Module):
 # import torch.nn.functional as F
 #
 # #
-# # 1. 纯净软阈值算子 (坚守物理底噪切除线，防止弱径误杀)
+# # 1. 纯净软
 # #
 # class SoftThresh(nn.Module):
 #     def __init__(self, beta, device="cuda"):
@@ -122,7 +122,7 @@ class CAdmmNet(nn.Module):
 #         denom = torch.abs(self.V) + torch.abs(self.rho) + 1e-6
 #         s_out = self.S(u_in)
 #
-#         # 核心算力引擎：2D-FFT 频域对角化免矩阵求逆，计算复杂度从 O(N^3) 降维至 O(N log N)
+#         # 核心算力引擎：2D-FFT 频域对角化免矩阵求逆
 #         fft_term = torch.fft.fft2(torch.abs(self.rho) * (2 * s_out - u_in) + x_dirty, dim=(1, 2))
 #         u_out = torch.fft.ifft2(fft_term / denom.unsqueeze(0), dim=(1, 2))
 #

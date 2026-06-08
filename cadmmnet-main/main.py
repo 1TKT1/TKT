@@ -54,8 +54,8 @@ def main():
             for key, value in command_args.items():
                 setattr(args, key, value)
 
-        # 🌟 修复点 2：将 argparse.sys.argv 修正为标准的 sys.argv
-        # 让显式敲入的命令行参数拥有最高继承权，反向覆盖 JSON 的死规定
+
+
         for action in parser_eval._actions if args.command == 'evaluate-model' else parser_train._actions:
             arg_name = action.dest
             if hasattr(raw_args, arg_name) and getattr(raw_args, arg_name) is not None:

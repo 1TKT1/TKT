@@ -3,7 +3,7 @@
     "model": "CADMM-Net",
     "num_layers": 15,
     "dataset_train_path": "./datasets/Train_Dataset_OFDM_CFR_2D_with_Dict.mat",
-    "epochs": 150,
+    "epochs": 200,
     "lr": 0.001,
     "batch_size": 32,
     "num_training_samples": 1800,

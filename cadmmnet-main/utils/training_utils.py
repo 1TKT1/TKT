@@ -18,7 +18,7 @@ def generate_gaussian_kernel_2d(kernel_size=7, sigma=0.5, device='cuda'):
     return torch.outer(g, g).unsqueeze(0).unsqueeze(0)
 
 
-# 🛡️ 加固：PyTorch + HDF5 标准懒加载机制（彻底杜绝 Windows 文件锁和共享冲突）
+
 class CSI_Dataset(Dataset):
     def __init__(self, mat_path, indices=None):
         self.mat_path = mat_path
@@ -37,7 +37,7 @@ class CSI_Dataset(Dataset):
         return self._length
 
     def __getitem__(self, idx):
-        # 核心懒加载：只有当 DataLoader 真正请求数据时，才打开文件，并在当前工作进程中长期持有句柄！
+
         # 这样训练集和验证集各自维护稳定的单一长连接，避免高频开关带来的 OS 锁死
         if self.file is None:
             self.file = h5py.File(self.mat_path, 'r')
@@ -82,7 +82,6 @@ def train_model(model, dataset_train_path, num_layers=15, epochs=150, lr=1e-4, b
     network = initialize_model(model, dataset_train_path, num_layers, device).to(device)
 
     optimizer = torch.optim.Adam(network.parameters(), lr=lr)
-    # 增加调度器耐心，适配 150 轮的长线作战
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
 
     KERNEL_SIZE = 11
@@ -96,7 +95,7 @@ def train_model(model, dataset_train_path, num_layers=15, epochs=150, lr=1e-4, b
     os.makedirs(state_dir, exist_ok=True)
     best_val_loss = float('inf')
 
-    print(f"\n🚀 启动训练 | 架构: {model} | 目标: 2D 高斯平滑 NMSE 损失")
+    print(f"\n 启动训练 | 架构: {model} | 目标: 2D 高斯平滑 NMSE 损失")
 
     for epoch in range(epochs):
         network.train()
@@ -154,7 +153,7 @@ def train_model(model, dataset_train_path, num_layers=15, epochs=150, lr=1e-4, b
                 'optimizer_state': optimizer.state_dict(),
                 'model_tag': model_tag
             }, os.path.join(state_dir, f"{model_tag}.pt"))
-            is_best = "  🌟 [New Best Saved]"
+            is_best = "  [New Best Saved]"
 
         print(
             f"Epoch [{epoch + 1:03d}/{epochs}] "
@@ -163,4 +162,4 @@ def train_model(model, dataset_train_path, num_layers=15, epochs=150, lr=1e-4, b
             f"Val: {10 * torch.log10(torch.tensor(avg_val)):.2f} dB{is_best}"
         )
 
-    print(f"\n✅ 训练完毕！最优权重已安全锁定于: {state_dir}")
+    print(f"\n 训练完毕！最优权重已安全锁定于: {state_dir}")
