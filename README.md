@@ -1,4 +1,4 @@
-# Taylor-TCADMM-Net (TKT Project)
+# TCADMM-Net 
 本仓库开源了基于模型驱动（Model-driven）深度展开（Deep Unfolding）架构的 5G 通感一体化超分辨率参数估计网络 ——TCADMM-Net。该算法旨在从 5G NR 100MHz 系统的信道频率响应（CFR）数据中，跨越瑞利极限，精细化联合估计多径信号的入射角 (DOA)与 时延 (TDE)，为亚米级高精度室内定位与雷达感知提供核心底层技术支撑。
 核心架构演进与物理先验
 
